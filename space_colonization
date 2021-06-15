@@ -1,0 +1,74 @@
+breed [colonies colony]
+colonies-own [expand?]
+
+to setup
+  clear-all
+  setup-galaxy
+  setup-ships
+  reset-ticks
+end
+
+to go
+  colony_self_destruct
+  ship_self_destruct
+  move-ships
+  create_colony
+  expand
+  tick
+  if (ticks > 1000) [stop]
+end
+
+to setup-galaxy ;setup the full galaxy
+  ask patches [if ( pxcor ^ 2 + pycor ^ 2 < 2500 ) [set pcolor green]] ;the galaxy is approximated as a circle, where dimensions are between -50 and 50 on both axis
+  ask patch 0 0 [set pcolor red] ;Sagitarrius A* black hole
+  ask patch 0 -25 [set pcolor blue] ;Earth
+end
+
+to setup-ships ; setup the ships from Earth : they'll be white dots of size 2
+  create-turtles ships_per_colony
+  [set shape "dot"
+    set size 2
+    set color white
+    setxy 0 -25
+]
+end
+
+to colony_self_destruct ; ;risk of colony destruction
+  ask patches [
+  if (pcolor = blue) and (random-float 1 < colony_destruct_risk)
+    [set pcolor green]
+  ]
+end
+
+to ship_self_destruct ; risk of ship destruction, or out of the galaxy
+  ask turtles
+  [if (random-float 1 < ship_destruct_risk) or (pcolor = black)
+    [die]
+  ]
+end
+
+to move-ships ; all ships go by 1 in a random direction between top, bottom, left and right
+  ask turtles [ face one-of neighbors4 forward 1
+  ]
+end
+
+
+to create_colony ; if a ship is on a green patch, it colonizes it
+  ask turtles
+  [if pcolor = green
+    [set pcolor blue
+    die]
+  ]
+end
+
+to expand ; if a colony wants to expand, it creates n new ships that would go in any direction
+  ask patches with [pcolor = blue]
+    [if (random-float 1 < expansion_willingness)
+      [sprout ships_per_colony
+        [set shape "dot"
+        set size 2
+        set color white
+        ]
+      ]
+    ]
+end
